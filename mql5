@@ -1,0 +1,151 @@
+mql5
+//+------------------------------------------------------------------+
+//|                                                   Global Intel Invest RSI EA Forex MT4 |
+//|                                               https://www.forexroboteasy.com |
+//|                                                   Forex Robot Easy Team |
+//+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+#property copyright 'Forex Robot Easy Team'
+#property link      'https://www.forexroboteasy.com'
+#property version   '1.00'
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+#include <Trade\Trade.mqh>
+#include <Indicators\RSI\RSI.mqh>
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+input double lotIncrement = 0.01;
+input double tradeAmountPer100 = 100.0;
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+CTrade trade;
+CRSI rsi;
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnInit()
+{
+   trade.SetExpertMagicNumber(12345); // Set unique magic number for the EA
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTick()
+{
+   for (int i = 0; i < SymbolsTotal(); i++)
+   {
+      string symbol = SymbolName(i);
+      if (!IsOptimizedSymbol(symbol))
+         continue;
+
+      if (trade.PositionSelect(symbol)) // Check if there is an open position for the symbol
+      {
+         double stopLoss = trade.PositionGetDouble(POSITION_SL);
+         double takeProfit = trade.PositionGetDouble(POSITION_TP);
+         
+         // Adjust stop loss and take profit levels based on RSI signals
+         if (rsi.CheckSignal(symbol))
+         {
+            stopLoss = rsi.GetStopLossLevel(symbol);
+            takeProfit = rsi.GetTakeProfitLevel(symbol);
+            trade.PositionModify(symbol, stopLoss, takeProfit);
+         }
+      }
+      else
+      {
+         // Check RSI signals for potential entry points
+         if (rsi.CheckSignal(symbol))
+         {
+            double lotSize = CalculateLotSize();
+            double stopLoss = rsi.GetStopLossLevel(symbol);
+            double takeProfit = rsi.GetTakeProfitLevel(symbol);
+            
+            if (rsi.IsBuySignal(symbol))
+               trade.Buy(symbol, lotSize, stopLoss, takeProfit);
+            else if (rsi.IsSellSignal(symbol))
+               trade.Sell(symbol, lotSize, stopLoss, takeProfit);
+         }
+      }
+   }
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double CalculateLotSize()
+{
+   double accountBalance = AccountInfoDouble(ACCOUNT_BALANCE);
+   double lotSize = accountBalance / tradeAmountPer100 * lotIncrement;
+   return lotSize;
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool IsOptimizedSymbol(string symbol)
+{
+   string optimizedSymbols[] = {'USDJPY', 'USDCHF', 'GBPUSD', 'AUDUSD', 'EURUSD', 'NZDUSD', 'EURCHF', 'USDCAD'};
+   for (int i = 0; i < ArraySize(optimizedSymbols); i++)
+   {
+      if (StringCompare(symbol, optimizedSymbols[i], false) == 0)
+         return true;
+   }
+   return false;
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool IsBuySignal(string symbol)
+{
+   // Implement RSI buy signal logic
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool IsSellSignal(string symbol)
+{
+   // Implement RSI sell signal logic
+   return true;
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double GetStopLossLevel(string symbol)
+{
+   // Implement stop loss level calculation based on RSI signals
+   return 0;
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double GetTakeProfitLevel(string symbol)
+{
+   // Implement take profit level calculation based on RSI signals
+   return 0;
+}
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool CheckSignal(string symbol)
+{
+   if (IsBuySignal(symbol) || IsSellSignal(symbol))
+      return true;
+   return false;
+}
